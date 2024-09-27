@@ -12,12 +12,10 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-image: url('https://raw.githubusercontent.com/jakechan-19/JekiChain/refs/heads/main/jkclogo.jpg');
+            background-size: cover;
             font-family: Arial, sans-serif;
-        }
-        #preload {
-            display: block; /* Tampilkan preload */
-            margin-bottom: 20px; /* Spasi di bawah gambar preload */
+            color: black; /* Mengubah warna teks menjadi hitam */
         }
         #gameBoard {
             display: grid;
@@ -36,6 +34,7 @@
             cursor: pointer;
             border-radius: 10px;
             transition: transform 0.2s, background-color 0.2s;
+            background-color: rgba(255, 255, 255, 0.8);
         }
         .cell:hover {
             transform: scale(1.05);
@@ -48,11 +47,11 @@
 </head>
 <body>
     <h1>JekiChain</h1>
-    <img id="preload" src="https://raw.githubusercontent.com/jakechan-19/JekiChain/refs/heads/main/jkcimg1.jpg" alt="JekiChain Preload" onload="document.getElementById('preload').style.display='none';">
     <div id="scoreBoard">
         JKC: <span id="score">0</span> | Kesempatan: <span id="lives">3</span> | Level: <span id="level">1</span>
     </div>
     <div id="gameBoard"></div>
+    <audio id="matchSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
     <script>
         const boardSize = 4;
         const colors = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪"];
@@ -116,9 +115,11 @@
             if (checkMatches()) {
                 score += 10; // Tambah skor
                 swapCount++;
+                document.getElementById("matchSound").play(); // Mainkan suara saat mencocokkan
                 if (swapCount % 5 === 0) { // Setiap 5 swap, tingkatkan level
                     level++;
                     lives++; // Tambah kesempatan
+                    alert("Level Up! Sekarang di level " + level);
                 }
             } else {
                 lives--; // Kehilangan kesempatan jika tidak ada match
@@ -207,8 +208,6 @@
             updateScoreBoard();
         }
 
-        createBoard(); // Initialize the game board
-
         // Fungsi untuk memperbarui papan setelah menghapus sel
         function dropCells() {
             for (let col = 0; col < boardSize; col++) {
@@ -233,6 +232,8 @@
             }
             renderBoard(); // Render ulang papan
         }
+
+        createBoard(); // Initialize the game board
     </script>
 </body>
 </html>
