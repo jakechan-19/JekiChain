@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JekiChain</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #preload {
+            display: block; /* Tampilkan preload */
+            margin-bottom: 20px; /* Spasi di bawah gambar preload */
+        }
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .cell:hover {
+            transform: scale(1.05);
+        }
+        #scoreBoard {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>JekiChain</h1>
+    <img id="preload" src="https://raw.githubusercontent.com/jakechan-19/JekiChain/refs/heads/main/jkcimg1.jpg" alt="JekiChain Preload" onload="document.getElementById('preload').style.display='none';">
+    <div id="scoreBoard">
+        JKC: <span id="score">0</span> | Kesempatan: <span id="lives">3</span> | Level: <span id="level">1</span>
+    </div>
+    <div id="gameBoard"></div>
+    <script>
+        const boardSize = 4;
+        const colors = ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪"];
+        let board = [];
+        let firstCell = null;
+        let secondCell = null;
+        let score = 0;
+        let lives = 3;
+        let level = 1;
+        let swapCount = 0;
+
+        function createBoard() {
+            board = [];
+            for (let i = 0; i < boardSize; i++) {
+                const row = [];
+                for (let j = 0; j < boardSize; j++) {
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                    row.push(randomColor);
+                }
+                board.push(row);
+            }
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const gameBoard = document.getElementById("gameBoard");
+            gameBoard.innerHTML = ""; // Clear existing cells
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    cell.textContent = board[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener("click", handleCellClick);
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function handleCellClick(event) {
+            const row = event.target.dataset.row;
+            const col = event.target.dataset.col;
+
+            if (firstCell === null) {
+                firstCell = { row, col };
+                event.target.style.backgroundColor = "lightblue"; // Highlight selected cell
+            } else if (secondCell === null && !(row == firstCell.row && col == firstCell.col)) {
+                secondCell = { row, col };
+                event.target.style.backgroundColor = "lightblue"; // Highlight selected cell
+                swapCells();
+            }
+        }
+
+        function swapCells() {
+            const temp = board[firstCell.row][firstCell.col];
+            board[firstCell.row][firstCell.col] = board[secondCell.row][secondCell.col];
+            board[secondCell.row][secondCell.col] = temp;
+
+            // Check for matches
+            if (checkMatches()) {
+                score += 10; // Tambah skor
+                swapCount++;
+                if (swapCount % 5 === 0) { // Setiap 5 swap, tingkatkan level
+                    level++;
+                    lives++; // Tambah kesempatan
+                }
+            } else {
+                lives--; // Kehilangan kesempatan jika tidak ada match
+                if (lives <= 0) {
+                    alert("Game Over! Skor akhir: " + score);
+                    resetGame();
+                }
+            }
+
+            resetCells();
+            renderBoard();
+            updateScoreBoard();
+        }
+
+        function checkMatches() {
+            let foundMatch = false;
+            // Sederhanakan pemeriksaan untuk mencocokkan horizontal dan vertikal
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (checkMatch(i, j)) {
+                        foundMatch = true;
+                        removeMatches(i, j); // Hapus yang cocok
+                    }
+                }
+            }
+            return foundMatch; // Mengembalikan true jika ada match
+        }
+
+        function checkMatch(row, col) {
+            const color = board[row][col];
+            return (checkDirection(row, col, color, 1, 0) || // Horizontal
+                    checkDirection(row, col, color, 0, 1)); // Vertikal
+        }
+
+        function checkDirection(row, col, color, deltaRow, deltaCol) {
+            let count = 0;
+            for (let i = 0; i < 3; i++) {
+                const r = row + i * deltaRow;
+                const c = col + i * deltaCol;
+                if (r < boardSize && c < boardSize && board[r][c] === color) {
+                    count++;
+                }
+            }
+            return count === 3; // Harus ada 3 berturut-turut
+        }
+
+        function removeMatches(row, col) {
+            const color = board[row][col];
+            // Hapus horizontal
+            for (let i = 0; i < boardSize; i++) {
+                if (board[row][i] === color) {
+                    board[row][i] = null; // Tandai untuk dihapus
+                }
+            }
+            // Hapus vertikal
+            for (let i = 0; i < boardSize; i++) {
+                if (board[i][col] === color) {
+                    board[i][col] = null; // Tandai untuk dihapus
+                }
+            }
+            score += 30; // Tambah skor karena menghapus
+            dropCells(); // Panggil fungsi untuk mengupdate papan setelah penghapusan
+        }
+
+        function resetCells() {
+            firstCell = null;
+            secondCell = null;
+            const cells = document.querySelectorAll(".cell");
+            cells.forEach(cell => {
+                cell.style.backgroundColor = ""; // Remove highlight
+            });
+        }
+
+        function updateScoreBoard() {
+            document.getElementById("score").textContent = score;
+            document.getElementById("lives").textContent = lives;
+            document.getElementById("level").textContent = level;
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            swapCount = 0;
+            createBoard(); // Restart game
+            updateScoreBoard();
+        }
+
+        createBoard(); // Initialize the game board
+
+        // Fungsi untuk memperbarui papan setelah menghapus sel
+        function dropCells() {
+            for (let col = 0; col < boardSize; col++) {
+                let emptyCells = 0;
+                for (let row = boardSize - 1; row >= 0; row--) {
+                    if (board[row][col] === null) {
+                        emptyCells++;
+                    } else if (emptyCells > 0) {
+                        // Pindahkan sel ke bawah
+                        board[row + emptyCells][col] = board[row][col];
+                        board[row][col] = null;
+                    }
+                }
+            }
+            // Generate new cells
+            for (let col = 0; col < boardSize; col++) {
+                for (let row = 0; row < boardSize; row++) {
+                    if (board[row][col] === null) {
+                        board[row][col] = colors[Math.floor(Math.random() * colors.length)];
+                    }
+                }
+            }
+            renderBoard(); // Render ulang papan
+        }
+    </script>
+</body>
+</html>
